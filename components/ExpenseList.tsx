@@ -35,6 +35,16 @@ export default function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListP
                             }}>
                                 {expense.category}
                             </span>
+                            <span style={{
+                                background: 'rgba(255, 255, 255, 0.1)',   // Different color for workType
+                                color: '#fff',
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                fontWeight: '500'
+                            }}>
+                                {expense.workType}
+                            </span>
                             <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                                 {new Date(expense.date).toLocaleDateString()} {new Date(expense.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>

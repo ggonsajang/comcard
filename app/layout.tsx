@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     title: "ComCard",
   },
   icons: {
-    icon: '/globe.svg', // Fallback to existing globe icon for now
-    apple: '/globe.svg',
+    icon: '/icon.png',
+    apple: '/icon.png',
   }
 };
 

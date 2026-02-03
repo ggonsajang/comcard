@@ -6,7 +6,7 @@ import { Expense } from '@/lib/types';
 import { getExpenses, saveExpense, updateExpense, deleteExpense } from '@/lib/storage';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
-import { Plus, Download, CreditCard } from 'lucide-react';
+import { Plus, Download, CreditCard, Mail } from 'lucide-react';
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -129,18 +129,43 @@ export default function Home() {
         </div>
 
         {view === 'list' && (
-          <button
-            onClick={handleExport}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '10px',
-              color: 'var(--text-main)',
-              backdropFilter: 'blur(5px)'
-            }}
-          >
-            <Download size={20} />
-          </button>
+          <div style={{ display: 'flex' }}>
+            <button
+              onClick={handleExport}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                padding: '10px',
+                color: 'var(--text-main)',
+                backdropFilter: 'blur(5px)'
+              }}
+            >
+              <Download size={20} />
+            </button>
+
+            <button
+              onClick={() => {
+                handleExport();
+                setTimeout(() => {
+                  const subject = encodeURIComponent("법인카드 사용내역 송부");
+                  const body = encodeURIComponent("법인카드 사용내역 엑셀 파일을 첨부하여 송부합니다.\n\n(다운로드된 엑셀 파일을 첨부해주세요.)");
+                  window.location.href = `mailto:dkLee@itqi.com?subject=${subject}&body=${body}`;
+                  alert("엑셀 파일이 다운로드되었습니다.\n메일 작성 창이 열리면 다운로드된 파일을 첨부해서 보내주세요.");
+                }, 1000);
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                padding: '10px',
+                color: 'var(--text-main)',
+                backdropFilter: 'blur(5px)',
+                marginLeft: '8px'
+              }}
+            >
+              <Mail size={20} />
+            </button>
+          </div>
+        )}
         )}
       </header>
 
@@ -167,30 +192,32 @@ export default function Home() {
       </div>
 
       {/* Floating Action Button (Only in List) */}
-      {view === 'list' && (
-        <button
-          onClick={() => setView('add')}
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--primary), #8f75ff)',
-            color: 'white',
-            boxShadow: '0 8px 24px rgba(108, 93, 211, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            transition: 'transform 0.2s',
-          }}
-          className="btn-primary"
-        >
-          <Plus size={28} />
-        </button>
-      )}
-    </main>
+      {
+        view === 'list' && (
+          <button
+            onClick={() => setView('add')}
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--primary), #8f75ff)',
+              color: 'white',
+              boxShadow: '0 8px 24px rgba(108, 93, 211, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              transition: 'transform 0.2s',
+            }}
+            className="btn-primary"
+          >
+            <Plus size={28} />
+          </button>
+        )
+      }
+    </main >
   );
 }
