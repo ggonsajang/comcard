@@ -166,7 +166,6 @@ export default function Home() {
             </button>
           </div>
         )}
-        )}
       </header>
 
       {/* Content */}
