@@ -1,42 +1,84 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { Expense } from '@/lib/types';
 import { getExpenses, saveExpense, updateExpense, deleteExpense } from '@/lib/storage';
+import { checkPassword, setAuthSession, getAuthSession } from '@/lib/supabase';
+import { sendBackupEmail } from '@/lib/emailBackup';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
+import LoginScreen from '@/components/LoginScreen';
 import { Plus, Download, CreditCard, Mail } from 'lucide-react';
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [view, setView] = useState<'list' | 'add' | 'edit'>('list');
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
 
-  useEffect(() => {
-    setExpenses(getExpenses());
+  // 데이터 로드 함수
+  const loadExpenses = useCallback(async () => {
+    const data = await getExpenses();
+    setExpenses(data);
   }, []);
 
-  const refreshList = () => {
-    setExpenses(getExpenses());
+  // 인증 확인
+  useEffect(() => {
+    const authenticated = getAuthSession();
+    setIsAuthenticated(authenticated);
+    setIsLoading(false);
+  }, []);
+
+  // 데이터 로드
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadExpenses();
+    }
+  }, [isAuthenticated, loadExpenses]);
+
+  const handleLogin = (password: string) => {
+    if (checkPassword(password)) {
+      setAuthSession();
+      setIsAuthenticated(true);
+    } else {
+      alert('패스워드가 올바르지 않습니다.');
+    }
+  };
+
+  const refreshList = async () => {
+    await loadExpenses();
     setView('list');
     setEditingExpense(undefined);
   };
 
-  const handleAdd = (data: Omit<Expense, 'id' | 'createdAt'>) => {
-    saveExpense(data);
-    refreshList();
+  const handleAdd = async (data: Omit<Expense, 'id' | 'createdAt'>) => {
+    await saveExpense(data);
+    await refreshList();
+
+    // 저장 직후 업데이트된 데이터로 백업 이메일 발송
+    setTimeout(async () => {
+      const updatedExpenses = await getExpenses();
+      sendBackupEmail(updatedExpenses);
+    }, 500);
   };
 
-  const handleUpdate = (data: Omit<Expense, 'id' | 'createdAt'>) => {
+  const handleUpdate = async (data: Omit<Expense, 'id' | 'createdAt'>) => {
     if (editingExpense) {
-      updateExpense({ ...data, id: editingExpense.id, createdAt: editingExpense.createdAt });
-      refreshList();
+      await updateExpense({ ...data, id: editingExpense.id, createdAt: editingExpense.createdAt });
+      await refreshList();
+
+      // 수정 직후 업데이트된 데이터로 백업 이메일 발송
+      setTimeout(async () => {
+        const updatedExpenses = await getExpenses();
+        sendBackupEmail(updatedExpenses);
+      }, 500);
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteExpense(id);
+  const handleDelete = async (id: string) => {
+    await deleteExpense(id);
     setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
@@ -160,6 +202,38 @@ export default function Home() {
 
     setShowExportMenu(false);
   };
+
+
+  // 로딩 중
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+      }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-main)' }}>
+          <div className="spinner" style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid rgba(255, 255, 255, 0.1)',
+            borderTop: '4px solid var(--primary)',
+            borderRadius: '50%',
+            margin: '0 auto 16px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <p>로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 로그인 화면
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <main className="container">
