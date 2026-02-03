@@ -198,7 +198,8 @@ export default function Home() {
         window.location.href = `mailto:dklee@itqi.kr?subject=${subject}&body=${body}`;
       }, 1000); // 1s delay
     } else {
-      alert(`${title} 다운로드가 완료되었습니다.`);
+      // alert 제거 - 브라우저 다운로드 팝업만 표시
+      console.log(`✅ ${title} 다운로드 완료`);
     }
 
     setShowExportMenu(false);
