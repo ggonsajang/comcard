@@ -268,7 +268,7 @@ export default function Home() {
               }}
             >
               <Download size={18} />
-              내보내기 / 메일
+              내보내기
             </button>
 
             {showExportMenu && (
@@ -276,7 +276,7 @@ export default function Home() {
                 position: 'absolute',
                 top: '110%',
                 right: 0,
-                width: '240px',
+                width: '200px',
                 background: '#1c1c21',
                 border: '1px solid var(--border-light)',
                 borderRadius: '16px',
@@ -287,30 +287,17 @@ export default function Home() {
                 flexDirection: 'column',
                 gap: '4px'
               }}>
-                <div style={{ padding: '8px', fontSize: '12px', color: '#666', fontWeight: 'bold' }}>엑셀 다운로드 (파일저장)</div>
                 <button onClick={() => handleExport('all')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
-                  📅 전체 내역 다운로드
+                  📅 전체 내역
                 </button>
                 <button onClick={() => handleExport('prev')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
-                  ⏮️ 전월 내역 다운로드
+                  ⏮️ 전월 내역
                 </button>
                 <button onClick={() => handleExport('curr')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
-                  ✅ 당월 내역 다운로드
-                </button>
-
-                <div style={{ height: '1px', background: '#333', margin: '4px 0' }} />
-
-                <div style={{ padding: '8px', fontSize: '12px', color: '#666', fontWeight: 'bold' }}>메일 발송 (다운로드+메일앱)</div>
-                <button onClick={() => handleExport('prev', true)} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#a29bfe', fontSize: '14px' }}>
-                  📧 전월 내역 제출
-                </button>
-                <button onClick={() => handleExport('curr', true)} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#a29bfe', fontSize: '14px' }}>
-                  📧 당월 내역 제출
+                  ✅ 당월 내역
                 </button>
               </div>
             )}
-
-            {/* Click outside closer check could be added here or just toggle */}
           </div>
         )}
       </header>
