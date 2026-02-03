@@ -53,15 +53,16 @@ export default function Home() {
     setEditingExpense(undefined);
   };
 
+
   const handleAdd = async (data: Omit<Expense, 'id' | 'createdAt'>) => {
     await saveExpense(data);
     await refreshList();
 
-    // 저장 직후 업데이트된 데이터로 백업 이메일 발송
+    // 저장 후 자동으로 Gmail 열어서 백업
     setTimeout(async () => {
       const updatedExpenses = await getExpenses();
       sendBackupEmail(updatedExpenses);
-    }, 500);
+    }, 300);
   };
 
   const handleUpdate = async (data: Omit<Expense, 'id' | 'createdAt'>) => {
@@ -69,11 +70,11 @@ export default function Home() {
       await updateExpense({ ...data, id: editingExpense.id, createdAt: editingExpense.createdAt });
       await refreshList();
 
-      // 수정 직후 업데이트된 데이터로 백업 이메일 발송
+      // 수정 후 자동으로 Gmail 열어서 백업
       setTimeout(async () => {
         const updatedExpenses = await getExpenses();
         sendBackupEmail(updatedExpenses);
-      }, 500);
+      }, 300);
     }
   };
 
