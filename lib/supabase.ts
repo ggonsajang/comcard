@@ -15,19 +15,19 @@ export const checkPassword = (inputPassword: string): boolean => {
 
 export const setAuthSession = () => {
     if (typeof window !== 'undefined') {
-        sessionStorage.setItem('comcard_auth', 'true');
+        localStorage.setItem('comcard_auth', 'true'); // sessionStorage에서 localStorage로 변경
     }
 };
 
 export const getAuthSession = (): boolean => {
     if (typeof window !== 'undefined') {
-        return sessionStorage.getItem('comcard_auth') === 'true';
+        return localStorage.getItem('comcard_auth') === 'true'; // sessionStorage에서 localStorage로 변경
     }
     return false;
 };
 
 export const clearAuthSession = () => {
     if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('comcard_auth');
+        localStorage.removeItem('comcard_auth'); // sessionStorage에서 localStorage로 변경
     }
 };
