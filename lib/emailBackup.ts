@@ -20,7 +20,16 @@ export const sendBackupEmail = (expenses: Expense[]) => {
     }
 
     try {
-        // 데이터 준비
+        const headers = [
+            '결제일자',
+            '사용 구분',
+            '사용 금액',
+            '근무 구분',
+            '감리사업명 or 제안명',
+            '결제 포함 직원(본인 포함)',
+            '비고'
+        ];
+
         const dataRows = currentMonthExpenses.map(e => {
             const d = new Date(e.date);
             const year = d.getFullYear();
@@ -33,47 +42,25 @@ export const sendBackupEmail = (expenses: Expense[]) => {
             hours = hours % 12;
             hours = hours ? hours : 12;
 
-            const dateStr = `${year}.${month}.${day} ${ampm} ${hours}:${minutes.toString().padStart(2, '0')}`;
+            const dateStr = `${year}. ${month}. ${day} ${ampm} ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-            return {
-                date: dateStr,
-                category: e.category,
-                amount: `${e.amount.toLocaleString()}원`,
-                workType: e.workType,
-                project: e.projectName || '-',
-                participants: e.participants || '-',
-                remarks: e.remarks || '-'
-            };
+            return [
+                dateStr,
+                e.category,
+                `${e.amount.toLocaleString()}원`,
+                e.workType,
+                e.projectName || '',
+                e.participants || '',
+                e.remarks || ''
+            ];
         });
 
         // 총액 계산
         const totalAmount = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-        // 표 형식 텍스트 생성 (폭 조정)
-        const makeLine = (items: string[], widths: number[]) => {
-            return '| ' + items.map((item, i) => item.padEnd(widths[i])).join(' | ') + ' |';
-        };
-
-        const colWidths = [18, 8, 12, 8, 20, 25, 15]; // 각 열 폭
-        const headers = ['결제일자', '사용구분', '사용금액', '근무구분', '감리사업명', '참석자', '비고'];
-
-        const divider = '+' + colWidths.map(w => '-'.repeat(w + 2)).join('+') + '+';
-        const headerLine = makeLine(headers, colWidths);
-
-        const dataLines = dataRows.map(row => {
-            return makeLine(
-                [row.date, row.category, row.amount, row.workType, row.project, row.participants, row.remarks],
-                colWidths
-            );
-        });
-
-        const tableText = [
-            divider,
-            headerLine,
-            divider,
-            ...dataLines,
-            divider
-        ].join('\n');
+        // 탭으로 구분된 표 생성 (엑셀에서 자동으로 열 인식)
+        const tsvTable = headers.join('\t') + '\n' +
+            dataRows.map(row => row.join('\t')).join('\n');
 
         const emailBody = `${currentYear}년 ${currentMonth + 1}월 법인카드 사용내역
 
@@ -81,11 +68,13 @@ export const sendBackupEmail = (expenses: Expense[]) => {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 아래 표를 복사하여 사용하세요
+📋 아래 표를 전체 선택(Ctrl+A) → 복사(Ctrl+C) → 엑셀에 붙여넣기(Ctrl+V)
 
-${tableText}
+${tsvTable}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 위 내용을 복사하여 엑셀에 붙여넣으면 자동으로 열이 분리됩니다.
 
 ※ ComCard 자동 백업`;
 
