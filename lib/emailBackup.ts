@@ -20,61 +20,50 @@ export const sendBackupEmail = (expenses: Expense[]) => {
     }
 
     try {
-        const headers = [
-            '결제일자',
-            '사용 구분',
-            '사용 금액',
-            '근무 구분',
-            '감리사업명 or 제안명',
-            '결제 포함 직원(본인 포함)',
-            '비고'
-        ];
-
         const dataRows = currentMonthExpenses.map(e => {
             const d = new Date(e.date);
             const year = d.getFullYear();
-            const month = d.getMonth() + 1;
-            const day = d.getDate();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
             let hours = d.getHours();
-            const minutes = d.getMinutes();
-            const seconds = d.getSeconds();
+            const minutes = d.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? '오후' : '오전';
             hours = hours % 12;
             hours = hours ? hours : 12;
 
-            const dateStr = `${year}. ${month}. ${day} ${ampm} ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            return [
-                dateStr,
-                e.category,
-                `${e.amount.toLocaleString()}원`,
-                e.workType,
-                e.projectName || '',
-                e.participants || '',
-                e.remarks || ''
-            ];
+            return {
+                date: `${year}.${month}.${day} ${ampm} ${hours}:${minutes}`,
+                category: e.category,
+                amount: e.amount.toLocaleString(),
+                workType: e.workType,
+                project: e.projectName || '-',
+                participants: e.participants || '-',
+                remarks: e.remarks || '-'
+            };
         });
 
         // 총액 계산
         const totalAmount = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-        // 탭으로 구분된 표 생성 (엑셀에서 자동으로 열 인식)
-        const tsvTable = headers.join('\t') + '\n' +
-            dataRows.map(row => row.join('\t')).join('\n');
+        // 간단한 목록 형식 (엑셀 친화적)
+        let tableText = '결제일자 / 사용구분 / 금액 / 근무구분 / 감리사업명 / 참석자 / 비고\n';
+        tableText += '─'.repeat(80) + '\n';
+
+        dataRows.forEach(row => {
+            tableText += `${row.date} / ${row.category} / ${row.amount}원 / ${row.workType} / ${row.project} / ${row.participants} / ${row.remarks}\n`;
+        });
 
         const emailBody = `${currentYear}년 ${currentMonth + 1}월 법인카드 사용내역
 
 총 ${currentMonthExpenses.length}건 | 총액 ${totalAmount.toLocaleString()}원
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 아래 표를 전체 선택(Ctrl+A) → 복사(Ctrl+C) → 엑셀에 붙여넣기(Ctrl+V)
+${tableText}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${tsvTable}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ 위 내용을 복사하여 엑셀에 붙여넣으면 자동으로 열이 분리됩니다.
+📋 위 내용을 복사하여 엑셀에서 사용하세요.
+   "/" 기호로 열을 구분할 수 있습니다.
 
 ※ ComCard 자동 백업`;
 
