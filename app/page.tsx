@@ -45,10 +45,53 @@ export default function Home() {
     setView('edit');
   };
 
+  // Export State
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // Helpers for filtering
+  const filterExpenses = (mode: 'all' | 'prev' | 'curr') => {
+    const now = new Date();
+    const currMonth = now.getMonth();
+    const currYear = now.getFullYear();
+
+    // Previous month logic (handles Jan -> Dec prev year)
+    let prevMonth = currMonth - 1;
+    let prevYear = currYear;
+    if (prevMonth < 0) {
+      prevMonth = 11;
+      prevYear = currYear - 1;
+    }
+
+    return expenses.filter(e => {
+      if (mode === 'all') return true;
+      const d = new Date(e.date);
+      if (mode === 'curr') {
+        return d.getMonth() === currMonth && d.getFullYear() === currYear;
+      }
+      if (mode === 'prev') {
+        return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+      }
+      return false;
+    });
+  };
+
+  const getExportTitle = (mode: 'all' | 'prev' | 'curr') => {
+    const now = new Date();
+    if (mode === 'all') return '전체_내역';
+    if (mode === 'curr') return `${now.getFullYear()}년${now.getMonth() + 1}월_내역`;
+
+    let prevMonth = now.getMonth(); // 0-11. actual month is +1. so prevMonth index is (curr - 1).
+    // If we want "Last Month" string:
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${d.getFullYear()}년${d.getMonth() + 1}월_내역`;
+  };
+
   // Excel Export Logic
-  const handleExport = () => {
-    if (expenses.length === 0) {
-      alert('내보낼 데이터가 없습니다.');
+  const handleExport = (mode: 'all' | 'prev' | 'curr', isMailAction: boolean = false) => {
+    const filteredData = filterExpenses(mode);
+
+    if (filteredData.length === 0) {
+      alert('선택한 기간에 내보낼 데이터가 없습니다.');
       return;
     }
 
@@ -64,10 +107,8 @@ export default function Home() {
     ];
 
     // 2. Format Data
-    const data = expenses.map(e => {
+    const data = filteredData.map(e => {
       const d = new Date(e.date);
-      // Format: 2025. 12. 29 오후 12:56:00
-      // Simple manual formatting to match korean style roughly
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
       const day = d.getDate();
@@ -76,11 +117,9 @@ export default function Home() {
       const seconds = d.getSeconds();
       const ampm = hours >= 12 ? '오후' : '오전';
       hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
+      hours = hours ? hours : 12;
 
       const dateStr = `${year}. ${month}. ${day} ${ampm} ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-      // Amount with '원'
       const amountStr = `${e.amount.toLocaleString()}원`;
 
       return [
@@ -96,28 +135,36 @@ export default function Home() {
 
     // 3. Create Worksheet
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-
-    // Adjust column widths (optional but nice)
     ws['!cols'] = [
-      { wch: 25 }, // Date
-      { wch: 10 }, // Cat
-      { wch: 15 }, // Amount
-      { wch: 10 }, // Work
-      { wch: 30 }, // Project
-      { wch: 25 }, // Participants
-      { wch: 30 }, // Remarks
+      { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 30 }, { wch: 25 }, { wch: 30 },
     ];
 
     // 4. Create Workbook and Download
     const wb = XLSX.utils.book_new();
+    const title = getExportTitle(mode);
     XLSX.utils.book_append_sheet(wb, ws, '법인카드사용내역');
-    XLSX.writeFile(wb, `법인카드내역_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `법인카드_${title}.xlsx`);
+
+    // 5. Mail Trigger
+    if (isMailAction) {
+      // Slight delay to allow download to start
+      setTimeout(() => {
+        const subjectTitle = title.replace(/_/g, ' '); // 2026년2월 내역
+        const subject = encodeURIComponent(`${subjectTitle} 법인카드 사용내역 송부`);
+        const body = encodeURIComponent(`${subjectTitle} 법인카드 사용내역 엑셀 파일을 송부합니다.\n\n(다운로드된 엑셀 파일을 첨부하여 보내주세요.)`);
+        window.location.href = `mailto:dklee@itqi.kr?subject=${subject}&body=${body}`;
+      }, 1000); // 1s delay
+    } else {
+      alert(`${title} 다운로드가 완료되었습니다.`);
+    }
+
+    setShowExportMenu(false);
   };
 
   return (
     <main className="container">
       {/* Header */}
-      <header className="flex-between" style={{ marginBottom: '24px', padding: '10px 0' }}>
+      <header className="flex-between" style={{ marginBottom: '24px', padding: '10px 0', position: 'relative' }}>
         <div className="flex-center gap-2">
           <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--primary), #8f75ff)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(108, 93, 211, 0.3)' }}>
             <CreditCard color="white" size={24} />
@@ -129,41 +176,66 @@ export default function Home() {
         </div>
 
         {view === 'list' && (
-          <div style={{ display: 'flex' }}>
+          <div style={{ position: 'relative' }}>
             <button
-              onClick={handleExport}
+              onClick={() => setShowExportMenu(!showExportMenu)}
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 borderRadius: '12px',
-                padding: '10px',
-                color: 'var(--text-main)',
-                backdropFilter: 'blur(5px)'
-              }}
-            >
-              <Download size={20} />
-            </button>
-
-            <button
-              onClick={() => {
-                handleExport();
-                setTimeout(() => {
-                  const subject = encodeURIComponent("법인카드 사용내역 송부");
-                  const body = encodeURIComponent("법인카드 사용내역 엑셀 파일을 첨부하여 송부합니다.\n\n(다운로드된 엑셀 파일을 첨부해주세요.)");
-                  window.location.href = `mailto:dkLee@itqi.com?subject=${subject}&body=${body}`;
-                  alert("엑셀 파일이 다운로드되었습니다.\n메일 작성 창이 열리면 다운로드된 파일을 첨부해서 보내주세요.");
-                }, 1000);
-              }}
-              style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                padding: '10px',
+                padding: '10px 16px',
                 color: 'var(--text-main)',
                 backdropFilter: 'blur(5px)',
-                marginLeft: '8px'
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
             >
-              <Mail size={20} />
+              <Download size={18} />
+              내보내기 / 메일
             </button>
+
+            {showExportMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '110%',
+                right: 0,
+                width: '240px',
+                background: '#1c1c21',
+                border: '1px solid var(--border-light)',
+                borderRadius: '16px',
+                padding: '8px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ padding: '8px', fontSize: '12px', color: '#666', fontWeight: 'bold' }}>엑셀 다운로드 (파일저장)</div>
+                <button onClick={() => handleExport('all')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
+                  📅 전체 내역 다운로드
+                </button>
+                <button onClick={() => handleExport('prev')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
+                  ⏮️ 전월 내역 다운로드
+                </button>
+                <button onClick={() => handleExport('curr')} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', fontSize: '14px' }}>
+                  ✅ 당월 내역 다운로드
+                </button>
+
+                <div style={{ height: '1px', background: '#333', margin: '4px 0' }} />
+
+                <div style={{ padding: '8px', fontSize: '12px', color: '#666', fontWeight: 'bold' }}>메일 발송 (다운로드+메일앱)</div>
+                <button onClick={() => handleExport('prev', true)} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#a29bfe', fontSize: '14px' }}>
+                  📧 전월 내역 제출
+                </button>
+                <button onClick={() => handleExport('curr', true)} className="menu-item" style={{ textAlign: 'left', padding: '10px', borderRadius: '8px', background: 'transparent', color: '#a29bfe', fontSize: '14px' }}>
+                  📧 당월 내역 제출
+                </button>
+              </div>
+            )}
+
+            {/* Click outside closer check could be added here or just toggle */}
           </div>
         )}
       </header>
