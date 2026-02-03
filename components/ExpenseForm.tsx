@@ -219,6 +219,7 @@ export default function ExpenseForm({ initialData, onSubmit, onCancel }: Expense
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                             <Camera size={32} />
                             <div style={{ marginTop: '8px', fontSize: '14px' }}>터치하여 촬영/선택</div>
+                            <div style={{ marginTop: '4px', fontSize: '11px', color: '#666' }}>*갤러리 저장이 필요하면<br />먼저 찍고 선택하세요</div>
                         </div>
                     )}
                 </div>
