@@ -106,22 +106,14 @@ export const sendBackupEmail = (expenses: Expense[]) => {
 
 ※ ComCard 자동 백업 시스템`;
 
+        // 팝업 없이 바로 Gmail 열기
         setTimeout(() => {
-            const message = `✅ CSV 파일 다운로드 완료!\n\n파일명: ${fileName}\n\n다운로드 폴더를 열까요?`;
-
-            const openDownloads = confirm(message);
-
-            // 다운로드 폴더 경로는 브라우저마다 다르므로 Gmail만 열기
             const subject = `[ComCard 백업] ${currentYear}년 ${currentMonth + 1}월 법인카드 내역`;
             const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=ggonsajang@gmail.com&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
-            console.log('📬 Gmail 열기');
-            const opened = window.open(gmailUrl, '_blank');
-
-            if (!opened) {
-                alert('팝업이 차단되었습니다.\n\n수동으로 Gmail을 열어서 다운로드된 CSV 파일을 첨부해주세요.');
-            }
-        }, 500);
+            console.log('📬 Gmail 자동 열기');
+            window.open(gmailUrl, '_blank');
+        }, 300);
 
     } catch (error) {
         console.error('❌ 백업 이메일 처리 중 오류:', error);

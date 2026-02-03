@@ -107,8 +107,10 @@ export default function ExpenseForm({ initialData, onSubmit, onCancel }: Expense
         if (!initialData) {
             const lastProject = localStorage.getItem('comcard_last_project');
             const lastParticipants = localStorage.getItem('comcard_last_participants');
+            const lastWorkType = localStorage.getItem('comcard_last_worktype');
 
             if (lastProject) setProjectName(lastProject);
+            if (lastWorkType) setWorkType(lastWorkType as WorkType);
 
             if (lastParticipants) {
                 setParticipants(lastParticipants);
@@ -178,6 +180,7 @@ export default function ExpenseForm({ initialData, onSubmit, onCancel }: Expense
         // Save defaults
         localStorage.setItem('comcard_last_project', projectName);
         localStorage.setItem('comcard_last_participants', participants);
+        localStorage.setItem('comcard_last_worktype', workType);
 
         onSubmit({
             date,
